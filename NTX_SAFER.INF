@@ -1,0 +1,1126 @@
+; NTX_SAFER.INF
+;
+; Configure 'Software Restriction Policies' a.k.a 'SAFER' on all
+; editions of Windows 8, Windows Server 2012 [R2], Windows 8.1,
+; Windows 10, Windows 11, Windows Server 2016, Windows Server 2019
+; and Windows Server 2022
+;
+; https://technet.microsoft.com/en-us/aa940985.aspx
+; https://technet.microsoft.com/en-us/bb457006.aspx
+; https://technet.microsoft.com/en-us/cc507878.aspx
+; https://technet.microsoft.com/en-us/cc786941.aspx
+;
+; SECPOL.MSC, the 'Local Policies' management console snap-in, and
+; GPEDIT.MSC, the 'Local Group Policy Editor' management console
+; snap-in, read 'SAFER' policies' additional rules only from
+; "%SystemRoot%\System32\GroupPolicy\Machine\REGISTRY.POL", not
+; from the registry!
+;
+; Use SRP2LGPO.EXE (available from the author upon request) to
+; export 'SAFER' policies from the registry to
+; "%SystemRoot%\System32\GroupPolicy\Machine\REGISTRY.POL".
+;
+; https://msdn.microsoft.com/en-us/aa384232.aspx
+; https://support.microsoft.com/en-us/kb/950407
+; https://support.microsoft.com/en-us/kb/960037
+;
+; CAUTION: on 64-bit systems NTX_SAFER.INF must not be run under
+;          SysWoW64! (KB950407, but KB960037)
+;
+; CAUTION: 'SAFER' policies written directly/only to the registry
+;          are overwritten by 'SAFER' policies defined in the
+;          'Local Policies' management console snap-in!
+;
+; CAUTION: if "%SystemRoot%\System32\GroupPolicy\Machine\REGISTRY.POL"
+;          contains no 'SAFER' policy entries the 'Local Policies'
+;          management console snap-in overwrites at first call 'SAFER'
+;          policies in the registry with default settings and rules!
+;
+; NOTE: if "%SystemRoot%\System32\GroupPolicy\Machine\REGISTRY.POL"
+;       does not exist use the 'empty' REGISTRY.POL provided by the
+;       author to avoid that!
+;
+; NOTE: 'SAFER' policies' additional rules written directly/only to
+;       the registry don't show in the 'Local Policies' management
+;       console snap-in!
+;
+; Copyright (C) 2004-2023, Stefan Kanthak <stefan.kanthak@nexgo.de>
+;
+; * The software is provided "as is" without any warranty, neither express
+;   nor implied.
+; * In no event will the author be held liable for any damage(s) arising
+;   from the use of the software.
+; * Redistribution of the software is allowed only in unmodified form.
+; * Permission is granted to use the software solely for personal private
+;   and non-commercial purposes.
+; * An individuals use of the software in his or her capacity or function
+;   as an agent, (independent) contractor, employee, member or officer of
+;   a business, corporation or organization (commercial or non-commercial)
+;   does not qualify as personal private and non-commercial purpose.
+; * Without written approval from the author the software must not be used
+;   for a business, for commercial, corporate, governmental, military or
+;   organizational purposes of any kind, or in a commercial, corporate,
+;   governmental, military or organizational environment of any kind.
+;   This file was modified by Gorstak
+
+[Version]
+DriverVer = 03/07/2023
+Provider  = "Stefan Kanthak"
+Signature = "$Windows NT$"
+
+[DefaultInstall.NTx86]
+AddReg        = Install.AddReg, Install.AddReg.x86
+CopyFiles     = Files.Cmd, Files.Inf, Files.Pol
+DelFiles      = Files.Pnf
+DelReg        = Install.DelReg
+;ProfileItems = Install.Shortcut
+
+[DefaultInstall.NTia64]
+AddReg        = Install.AddReg, Install.AddReg.ia64
+CopyFiles     = Files.Cmd, Files.Inf, Files.Pol
+DelFiles      = Files.Pnf
+DelReg        = Install.DelReg
+;ProfileItems = Install.Shortcut
+
+[DefaultInstall.NTamd64]
+AddReg        = Install.AddReg, Install.AddReg.amd64
+CopyFiles     = Files.Cmd, Files.Inf, Files.Pol
+DelFiles      = Files.Pnf
+DelReg        = Install.DelReg
+;ProfileItems = Install.Shortcut
+
+[DefaultUninstall]
+AddReg        = Remove.AddReg
+CleanUp       = 1
+DelFiles      = Files.Cmd, Files.Inf, Files.Pnf; Files.Log, Files.UAC
+DelReg        = Remove.DelReg, Remove.DelReg.amd64
+;ProfileItems = Remove.Shortcut
+
+[SourceDisksNames]
+; Cabinet file names and associated disks
+; <disk or cabinet number> = <disk description>,[<tag or cabinet file>],<identifier (unused, must be 0)>,[<relative source path>]
+
+57 = "Softwarebeschränkungsrichtlinien für 'Windows 8/2012 [R2]/8.1/10/11/2016/2019/2022'",,0000-0000,""
+
+[SourceDisksFiles]
+; <file> = <disk or cabinet number>,[<subdirectory>],[<file>],[<size>],[<checksum>]
+; NOTE: <file> is neither on a disk nor in a cabinet if <disk or cabinet number> is 0
+
+[SourceDisksFiles.x86]
+NTX_SAFER.INF = 57
+;SRPCHECK.CMD = 57
+;REGISTRY.POL = 57,I386
+;SRP2LGPO.EXE = 57,I386
+
+[SourceDisksFiles.ia64]
+NTX_SAFER.INF = 57
+;SRPCHECK.CMD = 57
+;REGISTRY.POL = 57,IA64
+;SRP2LGPO.EXE = 57,IA64
+
+[SourceDisksFiles.amd64]
+NTX_SAFER.INF = 57
+;SRPCHECK.CMD = 57
+;REGISTRY.POL = 57,AMD64
+;SRP2LGPO.EXE = 57,AMD64
+
+[DestinationDirs]
+; <section name> = <directory identifier>[,<subdirectory>]
+
+Files.Cmd = 10,"Scripts"
+Files.Inf = 17
+Files.Log = 11,"LogFiles"
+Files.Pnf = 17
+Files.Pol = 11,"GroupPolicy\Machine"
+; (KB927387)
+Files.UAC = 16412,"VirtualStore\Windows\System32\LogFiles"
+
+[Files]
+; <destination file>,[<source file>],[<temporary file>],[<flags>]
+; (Flag values may be combined by simple addition resp. boolean OR!)
+;     1: warn if user chooses to skip file
+;     1: delete file on reboot if in use (REMOVE ONLY)
+;     2: inhibit skipping of file by user
+;     4: ignore version conflict, overwrite newer files
+;     8: force file-in-use behaviour (rename after reboot)
+;    16: don't overwrite existing file
+;    32: suppress version conflict dialog, don't overwrite newer files
+;    64: overwrite existing file only if source is newer
+;  1024: copy only if target file exists
+;  2048: don't decompress source file
+;  4096: replace boot file
+;  8192: don't skip file due to optimization
+; 16384: if target file is in use, rename it, then copy source file and delete renamed target file;
+;        If target file cannot be renamed or deleted, postpone copy or delete until reboot
+; 65536: delete file on reboot if in use (REMOVE ONLY)
+
+[Files.Cmd]
+;SRPCHECK.CMD,,,3
+
+[Files.Inf]
+NTX_SAFER.INF,,,3
+
+[Files.Log]
+;SAFER.LOG,,,1
+
+;[Files.Log.Security]
+;"D:P(A;;FA;;;SY)(A;;FA;;;BA)(A;;LCSWLORC;;;BU)"
+
+[Files.Pnf]
+NTX_SAFER.PNF,,,1
+
+[Files.Pol]
+;REGISTRY.POL,,,16
+
+[Install.Shortcut]
+CmdLine    = 16421,,"Cmd.exe /D /K %16420%\Scripts\SRPCheck.cmd"
+;HotKey    =
+IconIndex  = 0
+IconPath   = 16421,,"Cmd.exe"
+InfoTip    = "Detect user-writable directories below %%SystemRoot%%, %%ProgramFiles%% and %%ProgramFiles(x86)%% where execution is allowed"
+Name       = "SAFER Loophole Check",0
+SubDir     = ".."
+WorkingDir = 0,"%%HOMEDRIVE%%%%HOMEPATH%%"
+
+[Install.DelReg]
+; Remove SUPERFLUOUS file name extensions from 'SAFER' executables list
+; NOTE: execution of 'portable executable' files via 'CreateProcess*()' and
+;       'LoadLibrary*()' as well as batch files via 'Windows Command Processor'
+;       and script files via 'Windows Script Host' is controlled independent of
+;       file name extension!
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"BAT"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"CMD"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"COM"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"CPL"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"EXE"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"JS"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"JSE"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"OCX"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"SCR"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"VBE"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"VBS"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"WSF"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"WSH"
+
+; Remove file name extensions '.LNK' and '.URL' from 'SAFER' executables list
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"LNK"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",98306,"URL"
+
+; Remove old rules from previous versions
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{06FF09C1-AEEF-4E0A-A840-3F3C110084A0}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{06FF305B-6694-4CEE-81D9-048304FFA3EB}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{06FF8DD4-BBB8-4621-9C06-3D38D3D91670}"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{07001879-0CB3-4582-833B-30BA6E02B5F6}"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{07008AFD-08AD-420B-902F-AEBDD18D6E9A}"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{0700FE0B-4DCD-4C40-B036-6B4A17DE03C6}"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{27441730-1F91-42E8-9E0A-6CAED1A08DC3}"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{2744273C-4611-4EF9-9A01-8803FC96B6E9}"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{27446A02-A7EF-4D81-AB1D-54FE34AE8610}"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{2744888B-9F39-442E-89B3-73C1DF10F702}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{302C15CF-2B80-499C-8455-A8DDA1796135}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{302C7E56-0D5E-41D1-B339-BD7DE5D8007C}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{302CBB7F-6FC0-4168-BF9C-D4A09C7176B9}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{303704A1-D0DF-49BD-B6FF-ED5DA2554B1F}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{303744C0-C37F-01C6-0300-0000B38137B4}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{3037894E-0F8C-4D45-B150-808A45BF9588}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{3037BE1F-1034-48F4-AA31-F52C8A132CFD}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{305F184B-E783-4A94-AC12-66A6082CD6EB}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{305F5714-ACF8-453F-8F22-C416194B5017}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{305F700A-572A-4E7C-9BBD-DD9452121B35}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{305FA64D-7F05-4FAE-8CBB-9DE4ABB6ED85}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{305FC3ED-BB45-4C6E-9104-3304A8C99DE4}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C77CC673-3BA3-427D-C9DE-76D54F6DC97E}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C77F1D47-1FE1-4E7A-869C-57659099E912}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A0FDE6-885E-4F68-9672-87F25654E2FF}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A17B92-870D-4C5E-996D-AF7E7A895C1A}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A22018-BB70-49D5-BD64-AF3749E82281}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A23408-1675-01C9-1600-00004D0529DB}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A2CBA7-6952-4E63-AD95-89F1397A0091}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A3B88F-B6E3-4131-B746-903E215FB071}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A411ED-1C0F-48C1-90E5-6D3A1CA054C1}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A5B05B-A031-4282-9451-7FD35BE61A66}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A5EDBE-71B2-4205-B794-3712DCDA2517}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A7E59F-3A86-4BF6-9174-9FBFE0E66195}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A8D05E-955A-4F58-8F38-F8AE845A7CB0}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC1CC0-9FF7-4D8D-876C-948707693763}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AFF6A8-CE8A-4BEE-9E2A-032DD8852160}"
+
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{9B92BA3F-3825-4363-B379-9165FB19A669}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{9B92F738-8C61-4CD1-B0A5-7C8A013EA1C9}"
+
+[Install.AddReg]
+; Enable file system and registry virtualization for standard users (but KB927387 & KB950934)
+; (https://technet.microsoft.com/en-us/dd835564.aspx)
+;HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System","EnableVirtualization",65537,1
+
+; Disable 'Standard Users' in 'Safe Mode' (KB977542)
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System","SafeModeBlockNonAdmins",65537,1
+
+; CAUTION: command lines in 'Run', 'RunOnce', 'RunOnce\Setup' and 'RunOnceEx' are limited to 260 characters!
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce\Setup","ReadMe",0,"%16421%\RUNDLL32.EXE %16421%\URL.DLL,OpenURL https://technet.microsoft.com/bb457006.aspx"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce\Setup","AppCert",0,"%16421%\RUNDLL32.EXE %16421%\URL.DLL,OpenURL https://skanthak.homepage.t-online.de/appcert.html"
+
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","Author",2,"Stefan Kanthak"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","Contact",2,"<stefan.kanthak@nexgo.de>"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","DisplayIcon",2,"%16421%\RUNONCE.EXE"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","DisplayName",2,"Systemkonfiguration"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","DisplayVersion",2,"2023.03.07"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","HelpLink",2;""
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","NoModify",65539,1
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","NoRemove",65539,1
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","NoRepair",65539,1
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","Publisher",2,"Me, myself & IT"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","ReadMe",2;""
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","Size",2;""
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","UninstallString",2,"."
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","URLInfoAbout",2,"https://skanthak.homepage.t-online.de/index.html"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","URLUpdateInfo",2,"https://skanthak.homepage.t-online.de/index.html"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation","Version",65539,0x20230307
+
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","Author",0,"Stefan Kanthak"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","Contact",0,"<stefan.kanthak@nexgo.de>"
+;HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","DisplayIcon",0,"%17%\NTX_SAFER.ICO"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","DisplayIcon",0,"%16421%\RUNONCE.EXE"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","DisplayName",0,"Softwarebeschränkungsrichtlinien für 'Windows 8/2012 [R2]/8.1/10/11/2016/2019/2022'"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","DisplayVersion",0,"2023.03.07"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","EstimatedSize",65537,100
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","HelpLink",0,"https://technet.microsoft.com/bb457006.aspx"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","InstallLocation",0,"%17%\"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","InstallSource",0,"%01%\"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","NoModify",65537,1
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","NoRemove",65537,0
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","NoRepair",65537,1
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","ParentDisplayName",0,"Systemkonfiguration"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","ParentKeyName",0,"eSKamation"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","Publisher",0,"Me, myself & IT"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","ReadMe",0,"https://technet.microsoft.com/bb457006.aspx"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","Size",0;""
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","UninstallString",0,"%16421%\RUNDLL32.EXE %16421%\SETUPAPI.DLL,InstallHinfSection DefaultUninstall 132 %17%\NTX_SAFER.INF"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","URLInfoAbout",0,"https://skanthak.homepage.t-online.de/SAFER.html"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","URLUpdateInfo",0,"https://skanthak.homepage.t-online.de/SAFER.html"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer","Version",65537,0x20230307
+
+HKLM,"SOFTWARE\Microsoft\Windows Script Host\Settings","UseWinSAFER",32,"1"
+
+;HKLM,"SOFTWARE\Policies\Microsoft\SystemCertificates\Disallowed\Certificates\<SHA-1 fingerprint>","Blob",1;
+
+;HKLM,"SOFTWARE\Policies\Microsoft\SystemCertificates\TrustedPublisher\Certificates\<SHA-1 fingerprint>","Blob",1;
+
+; 0x00000000: allow all users to manage trusted publishers
+; 0x00000001: allow only local administrators to manage trusted publishers
+; 0x00000002: allow only domain administrators to manage trusted publishers
+; 0x00000100: check for revocation of issuer certificates
+; 0x00000200: check for revocation of timestamper certificates
+HKLM,"SOFTWARE\Policies\Microsoft\SystemCertificates\TrustedPublisher\Safer","AuthentiCodeFlags",65537,0x00000300
+
+; Disable 'SAFER' certificate rules (KB324036)
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","AuthentiCodeEnabled",65537,0
+
+; Set default 'SAFER' policy to 'Disallowed'
+; 0x00040000: fully trusted (alias unrestricted)
+; 0x00020000: normal user (alias basic user)
+; 0x00010000: constrained (alias restricted)
+; 0x00001000: untrusted
+; 0x00000000: disallowed
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","DefaultLevel",65537,0
+
+; Add file name extensions to 'SAFER' executables list
+; NOTE: execution of 'portable executable' files via 'CreateProcess*()' and
+;       'LoadLibrary*()' as well as batch files via 'Windows Command Processor'
+;       and script files via 'Windows Script Host' is controlled independent of
+;       file name extension!
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"ACM"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"ADE"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"ADP"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"AX"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"BAS"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"BAT"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"CHM"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"CMD"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"COM"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"CPL"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"CRT"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"DLL"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"DRV"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"DS"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"EFI"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"EXE"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"HLP"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"HTA"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"HTC"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"IME"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"INF"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"INS"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"ISP"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"JOB"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"JS"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"JSE"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"LNK"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"MDB"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"MDE"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"MSC"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"MSI"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"MSP"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"MST"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"MUI"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"OCX"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"PCD"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"PIF"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"PS1"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"REG"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"RLL"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"SCF"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"SCR"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"SCT"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"SHS"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"TMP"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"TSP"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"URL"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"VB"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"VBE"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"VBS"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"VCM"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"WLL"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"WPC"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"WSC"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"WSF"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"WSH"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"XLL"
+
+; Enable all 'SAFER' trust levels
+; (https://technet.microsoft.com/en-us/cc766102.aspx)
+; 0x00040000: fully trusted (alias unrestricted)
+; 0x00020000: normal user (alias basic user)
+; 0x00010000: constrained (alias restricted)
+; 0x00001000: untrusted
+; 0x00000000: disallowed
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","Levels",65537,0x00071000
+
+; Enable advanced 'SAFER' logging
+; NOTE: only 'Administrators' can write to "%SystemRoot%\System32\LogFiles\SAFER.LOG"!
+;       With 'File System Redirection' of 'User Account Control' standard users write
+;       to "%LOCALAPPDATA%\VirtualStore\Windows\System32\LogFiles\SAFER.LOG" instead.
+; NOTE: only interactive 32-bit processes are subject to 'File System Redirection'!
+;       (https://msdn.microsoft.com/en-us/aa384187.aspx)
+; CAUTION: the log file(s) can grow quite large!
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","LogFileName",2,"%16421%\LogFiles\SAFER.LOG"
+
+; Exempt 'Administrators' from 'SAFER'
+; 0x00000000: all users
+; 0x00000001: all users except 'Administrators'
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","PolicyScope",65537,1
+
+; Enable 'SAFER' for all executables and DLLs
+; 0x00000000: no enforcement
+; 0x00000001: all executables except DLLs
+; 0x00000002: all executables plus DLLs
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","TransparentEnabled",65537,2
+
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Hashes",,16
+
+; Deny execution of empty files
+; NOTE: rules with GUID '{00000000-0000-0000-0000-000000000000}' are discarded!
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Hashes\{00000000-0000-0000-0000-000000000000}","Description",0,"Leere Datei"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Hashes\{00000000-0000-0000-0000-000000000000}","FriendlyName",0,"NICHT AUSGEWERTET!"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Hashes\{00000000-0000-0000-0000-000000000000}","HashAlg",65537,32771
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Hashes\{00000000-0000-0000-0000-000000000000}","ItemData",1,d4,1d,8c,d9,8f,00,b2,04,e9,80,09,98,ec,f8,42,7e
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Hashes\{00000000-0000-0000-0000-000000000000}","ItemSize",720897,00,00,00,00,00,00,00,00
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Hashes\{00000000-0000-0000-0000-000000000000}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Hashes\{00000000-0000-0000-0000-000000000000}","SaferFlags",65537,0
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Hashes\{00000000-0000-0000-0000-000000000000}\SHA256","HashAlg",65537,32780
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Hashes\{00000000-0000-0000-0000-000000000000}\SHA256","ItemData",1,e3,b0,c4,42,98,fc,1c,14,9a,fb,f4,c8,99,6f,b9,24,27,ae,41,e4,64,9b,93,4c,a4,95,99,1b,78,52,b8,55
+
+; Deny execution in all local paths
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B92F9B-EE8C-41D5-9AA1-B33D35DB49FB}","Description",0,"Alle lokalen Pfade"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B92F9B-EE8C-41D5-9AA1-B33D35DB49FB}","ItemData",0,"?:\"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B92F9B-EE8C-41D5-9AA1-B33D35DB49FB}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B92F9B-EE8C-41D5-9AA1-B33D35DB49FB}","SaferFlags",65537,0
+
+; Deny execution in all UNC paths
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B97DA0-641E-474E-BDCC-3F2294507AC3}","Description",0,"Alle Netzwerkpfade"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B97DA0-641E-474E-BDCC-3F2294507AC3}","ItemData",0,"\\"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B97DA0-641E-474E-BDCC-3F2294507AC3}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B97DA0-641E-474E-BDCC-3F2294507AC3}","SaferFlags",65537,0
+
+; Deny execution in "?:\System Volume Information"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9A46A-64A1-4BE5-A896-6E0B4B1C502C}","Description",0,"System Volume Information"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9A46A-64A1-4BE5-A896-6E0B4B1C502C}","ItemData",0,"?:\System Volume Information"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9A46A-64A1-4BE5-A896-6E0B4B1C502C}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9A46A-64A1-4BE5-A896-6E0B4B1C502C}","SaferFlags",65537,0
+
+; Deny execution in 'Recycle Bin' of Windows XP and Windows Server 2003 [R2] ("?:\Recycled" and "?:\Recycler")
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9D2EC-FB61-4161-1341-3DBEF03AF18E}","Description",0,"Papierkorb (Windows XP/2003 [R2])"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9D2EC-FB61-4161-1341-3DBEF03AF18E}","ItemData",0,"?:\RECYCLE?"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9D2EC-FB61-4161-1341-3DBEF03AF18E}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9D2EC-FB61-4161-1341-3DBEF03AF18E}","SaferFlags",65537,0
+
+; Deny execution in 'Recycle Bin' of Windows Vista/7/8/2012 [R2]/8.1/10/2016/2019/11/2022 ("?:\$Recycle.Bin")
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9DFE4-ED08-4328-B355-4BC63D6267B2}","Description",0,"Papierkorb (Windows Vista/7/8/10/11)"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9DFE4-ED08-4328-B355-4BC63D6267B2}","ItemData",0,"?:\$RECYCLE.BIN"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9DFE4-ED08-4328-B355-4BC63D6267B2}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9DFE4-ED08-4328-B355-4BC63D6267B2}","SaferFlags",65537,0
+
+; Deny execution in 'ProgramData' (typically "%SystemDrive%\ProgramData") (but KB4052623)
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{06FFDEFE-4EC8-4CCB-BA70-86C7054B2AC6}","Description",0,"%ProgramData%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{06FFDEFE-4EC8-4CCB-BA70-86C7054B2AC6}","ItemData",0,"%16419%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{06FFDEFE-4EC8-4CCB-BA70-86C7054B2AC6}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{06FFDEFE-4EC8-4CCB-BA70-86C7054B2AC6}","SaferFlags",65537,0
+
+; Deny execution of "%SystemRoot%\System32\RunAs.Exe":
+;  "%SystemRoot%\System32\RunAs.Exe" /TrustLevel:Unrestricted "<program.exe>" circumvents 'SAFER' restrictions!
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{1001AAF1-749F-49F4-8010-297BD6CA33A0}","Description",0,"%SystemRoot%\System32\RunAs.Exe"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{1001AAF1-749F-49F4-8010-297BD6CA33A0}","ItemData",0,"%16420%\System32\RunAs.Exe"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{1001AAF1-749F-49F4-8010-297BD6CA33A0}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{1001AAF1-749F-49F4-8010-297BD6CA33A0}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\Macromed\Flash" (KB913433 & KB923789)
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{2742F840-C2D8-4EB3-A486-0A9D0879F29F}","Description",0,"Macromedia Flash"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{2742F840-C2D8-4EB3-A486-0A9D0879F29F}","ItemData",0,"%16420%\System32\Macromed\Flash"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{2742F840-C2D8-4EB3-A486-0A9D0879F29F}","LastModified",720897,10,c3,8a,19,c6,e3,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{2742F840-C2D8-4EB3-A486-0A9D0879F29F}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\CSC"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A69B6C-8792-426D-89AB-CE11B1DB3017}","Description",0,"%SystemRoot%\CSC"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A69B6C-8792-426D-89AB-CE11B1DB3017}","ItemData",0,"%16420%\CSC"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A69B6C-8792-426D-89AB-CE11B1DB3017}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A69B6C-8792-426D-89AB-CE11B1DB3017}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\Debug\WIA"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A80AF5-D291-4464-8D15-A877F332A666}","Description",0,"%SystemRoot%\Debug\WIA"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A80AF5-D291-4464-8D15-A877F332A666}","ItemData",0,"%16420%\Debug\WIA"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A80AF5-D291-4464-8D15-A877F332A666}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A80AF5-D291-4464-8D15-A877F332A666}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\Debug\WIA"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A84AEC-7487-494A-891A-09EB13942A77}","Description",0,"%SystemRoot%\Debug\WIA:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A84AEC-7487-494A-891A-09EB13942A77}","ItemData",0,"%16420%\Debug\WIA:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A84AEC-7487-494A-891A-09EB13942A77}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A84AEC-7487-494A-891A-09EB13942A77}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\Logs"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A879D0-94C6-4145-9039-19A1DD94E2F5}","Description",0,"%SystemRoot%\Logs"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A879D0-94C6-4145-9039-19A1DD94E2F5}","ItemData",0,"%16420%\Logs"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A879D0-94C6-4145-9039-19A1DD94E2F5}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A879D0-94C6-4145-9039-19A1DD94E2F5}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\Media"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A8C62E-75B6-4447-B54F-B351757BF34E}","Description",0,"%SystemRoot%\Media"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A8C62E-75B6-4447-B54F-B351757BF34E}","ItemData",0,"%16420%\Media"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A8C62E-75B6-4447-B54F-B351757BF34E}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A8C62E-75B6-4447-B54F-B351757BF34E}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\Registration\CRMLog"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A8F941-D7CB-4042-8C04-AAA87ADB8FC2}","Description",0,"%SystemRoot%\Registration\CRMLog"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A8F941-D7CB-4042-8C04-AAA87ADB8FC2}","ItemData",0,"%16420%\Registration\CRMLog"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A8F941-D7CB-4042-8C04-AAA87ADB8FC2}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A8F941-D7CB-4042-8C04-AAA87ADB8FC2}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\Registration\CRMLog"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A90615-4ABE-4937-879C-47C19F107CC8}","Description",0,"%SystemRoot%\Registration\CRMLog:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A90615-4ABE-4937-879C-47C19F107CC8}","ItemData",0,"%16420%\Registration\CRMLog:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A90615-4ABE-4937-879C-47C19F107CC8}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A90615-4ABE-4937-879C-47C19F107CC8}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\ServiceProfiles"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A918B9-7529-44E7-9C6D-5098F8B1D90F}","Description",0,"%SystemRoot%\ServiceProfiles"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A918B9-7529-44E7-9C6D-5098F8B1D90F}","ItemData",0,"%16420%\ServiceProfiles"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A918B9-7529-44E7-9C6D-5098F8B1D90F}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A918B9-7529-44E7-9C6D-5098F8B1D90F}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\AppMgmt"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A919D4-AF0E-44F1-A205-414D8F39E12B}","Description",0,"%SystemRoot%\System32\AppMgmt"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A919D4-AF0E-44F1-A205-414D8F39E12B}","ItemData",0,"%16420%\System32\AppMgmt"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A919D4-AF0E-44F1-A205-414D8F39E12B}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A919D4-AF0E-44F1-A205-414D8F39E12B}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\CatRoot2\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A920B3-02C4-4F7A-BA23-D282A57394D6}","Description",0,"%SystemRoot%\System32\CatRoot2\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A920B3-02C4-4F7A-BA23-D282A57394D6}","ItemData",0,"%16421%\CatRoot2\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A920B3-02C4-4F7A-BA23-D282A57394D6}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A920B3-02C4-4F7A-BA23-D282A57394D6}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\System32\CatRoot2\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A92CBF-44F7-4E1E-A29D-FA166125C8B8}","Description",0,"%SystemRoot%\System32\CatRoot2\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A92CBF-44F7-4E1E-A29D-FA166125C8B8}","ItemData",0,"%16421%\CatRoot2\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A92CBF-44F7-4E1E-A29D-FA166125C8B8}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A92CBF-44F7-4E1E-A29D-FA166125C8B8}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\COM\Dmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A945C6-411A-4C85-9C98-1A196616BCC9}","Description",0,"%SystemRoot%\System32\COM\Dmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A945C6-411A-4C85-9C98-1A196616BCC9}","ItemData",0,"%16420%\System32\COM\Dmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A945C6-411A-4C85-9C98-1A196616BCC9}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A945C6-411A-4C85-9C98-1A196616BCC9}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\System32\COM\Dmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A958A9-54CF-4336-8123-D7FB74D5CD06}","Description",0,"%SystemRoot%\System32\COM\Dmp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A958A9-54CF-4336-8123-D7FB74D5CD06}","ItemData",0,"%16420%\System32\COM\Dmp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A958A9-54CF-4336-8123-D7FB74D5CD06}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A958A9-54CF-4336-8123-D7FB74D5CD06}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\Config"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A98E1D-1577-134F-9B9C-75278D6318EB}","Description",0,"%SystemRoot%\System32\Config"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A98E1D-1577-134F-9B9C-75278D6318EB}","ItemData",0,"%16420%\System32\Config"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A98E1D-1577-134F-9B9C-75278D6318EB}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A98E1D-1577-134F-9B9C-75278D6318EB}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\Drivers\Etc"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AA3C3E-3E5D-48D1-9E46-E3DDDBFE0B5B}","Description",0,"%SystemRoot%\System32\Drivers\Etc"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AA3C3E-3E5D-48D1-9E46-E3DDDBFE0B5B}","ItemData",0,"%16420%\System32\Drivers\Etc"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AA3C3E-3E5D-48D1-9E46-E3DDDBFE0B5B}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AA3C3E-3E5D-48D1-9E46-E3DDDBFE0B5B}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\FxsTmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AA71AB-90A6-4621-82B1-FF348DAD6D85}","Description",0,"%SystemRoot%\System32\FxsTmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AA71AB-90A6-4621-82B1-FF348DAD6D85}","ItemData",0,"%16420%\System32\FxsTmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AA71AB-90A6-4621-82B1-FF348DAD6D85}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AA71AB-90A6-4621-82B1-FF348DAD6D85}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\System32\FxsTmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAB6D7-0010-4BA1-9AD1-A440202167D3}","Description",0,"%SystemRoot%\System32\FxsTmp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAB6D7-0010-4BA1-9AD1-A440202167D3}","ItemData",0,"%16420%\System32\FxsTmp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAB6D7-0010-4BA1-9AD1-A440202167D3}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAB6D7-0010-4BA1-9AD1-A440202167D3}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\LogFiles\WMI"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAC585-C34F-4BFD-8941-AAF1B1AD77E5}","Description",0,"%SystemRoot%\System32\LogFiles\WMI"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAC585-C34F-4BFD-8941-AAF1B1AD77E5}","ItemData",0,"%16420%\System32\LogFiles\WMI"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAC585-C34F-4BFD-8941-AAF1B1AD77E5}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAC585-C34F-4BFD-8941-AAF1B1AD77E5}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\Microsoft\Crypto\RSA\MachineKeys"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAE749-8B75-4BE5-84C3-C728EC2A57DF}","Description",0,"%SystemRoot%\System32\Microsoft\Crypto\RSA\MachineKeys"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAE749-8B75-4BE5-84C3-C728EC2A57DF}","ItemData",0,"%16420%\System32\Microsoft\Crypto\RSA\MachineKeys"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAE749-8B75-4BE5-84C3-C728EC2A57DF}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAE749-8B75-4BE5-84C3-C728EC2A57DF}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\System32\Microsoft\Crypto\RSA\MachineKeys"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAFAC1-17A0-4834-A55C-7B9FCEBEB4FB}","Description",0,"%SystemRoot%\System32\Microsoft\Crypto\RSA\MachineKeys:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAFAC1-17A0-4834-A55C-7B9FCEBEB4FB}","ItemData",0,"%16420%\System32\Microsoft\Crypto\RSA\MachineKeys:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAFAC1-17A0-4834-A55C-7B9FCEBEB4FB}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAFAC1-17A0-4834-A55C-7B9FCEBEB4FB}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\Spool\Drivers\Color"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB3254-7E0F-4213-8F86-749F5EDAEDA4}","Description",0,"%SystemRoot%\System32\Spool\Drivers\Color"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB3254-7E0F-4213-8F86-749F5EDAEDA4}","ItemData",0,"%16420%\System32\Spool\Drivers\Color"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB3254-7E0F-4213-8F86-749F5EDAEDA4}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB3254-7E0F-4213-8F86-749F5EDAEDA4}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\System32\Spool\Drivers\Color"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB32D0-7400-45F8-9646-7C954FC2B8FB}","Description",0,"%SystemRoot%\System32\Spool\Drivers\Color:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB32D0-7400-45F8-9646-7C954FC2B8FB}","ItemData",0,"%16420%\System32\Spool\Drivers\Color:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB32D0-7400-45F8-9646-7C954FC2B8FB}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB32D0-7400-45F8-9646-7C954FC2B8FB}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\Spool\Printers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB3EA3-E425-40B2-B4F5-8163DE60B306}","Description",0,"%SystemRoot%\System32\Spool\Printers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB3EA3-E425-40B2-B4F5-8163DE60B306}","ItemData",0,"%16420%\System32\Spool\Printers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB3EA3-E425-40B2-B4F5-8163DE60B306}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB3EA3-E425-40B2-B4F5-8163DE60B306}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\System32\Spool\Printers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB4C34-83EF-4AAD-A1B9-12F7AA18487B}","Description",0,"%SystemRoot%\System32\Spool\Printers:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB4C34-83EF-4AAD-A1B9-12F7AA18487B}","ItemData",0,"%16420%\System32\Spool\Printers:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB4C34-83EF-4AAD-A1B9-12F7AA18487B}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB4C34-83EF-4AAD-A1B9-12F7AA18487B}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\Spool\Servers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB5787-EB67-4727-8DE8-CEC6106EA3F6}","Description",0,"%SystemRoot%\System32\Spool\Servers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB5787-EB67-4727-8DE8-CEC6106EA3F6}","ItemData",0,"%16420%\System32\Spool\Servers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB5787-EB67-4727-8DE8-CEC6106EA3F6}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB5787-EB67-4727-8DE8-CEC6106EA3F6}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\System32\Spool\Servers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABA2A7-2D33-42A9-AC8B-A5FEDE1DF6FA}","Description",0,"%SystemRoot%\System32\Spool\Servers:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABA2A7-2D33-42A9-AC8B-A5FEDE1DF6FA}","ItemData",0,"%16420%\System32\Spool\Servers:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABA2A7-2D33-42A9-AC8B-A5FEDE1DF6FA}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABA2A7-2D33-42A9-AC8B-A5FEDE1DF6FA}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABAF83-F923-4DD8-ADF2-98D4D48842BE}","Description",0,"%SystemRoot%\System32\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABAF83-F923-4DD8-ADF2-98D4D48842BE}","ItemData",0,"%16420%\System32\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABAF83-F923-4DD8-ADF2-98D4D48842BE}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABAF83-F923-4DD8-ADF2-98D4D48842BE}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\System32\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABB2D1-A6AF-4D87-AE2C-838C6524EDA4}","Description",0,"%SystemRoot%\System32\Tasks:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABB2D1-A6AF-4D87-AE2C-838C6524EDA4}","ItemData",0,"%16420%\System32\Tasks:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABB2D1-A6AF-4D87-AE2C-838C6524EDA4}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABB2D1-A6AF-4D87-AE2C-838C6524EDA4}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\System32\Tasks_Migrated"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABC579-730B-463E-A23D-30778998D7A3}","Description",0,"%SystemRoot%\System32\Tasks_Migrated"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABC579-730B-463E-A23D-30778998D7A3}","ItemData",0,"%16420%\System32\Tasks_Migrated"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABC579-730B-463E-A23D-30778998D7A3}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABC579-730B-463E-A23D-30778998D7A3}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\System32\Tasks_Migrated"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABD4BC-FD03-4473-9468-D6707BD6CA20}","Description",0,"%SystemRoot%\System32\Tasks_Migrated:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABD4BC-FD03-4473-9468-D6707BD6CA20}","ItemData",0,"%16420%\System32\Tasks_Migrated:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABD4BC-FD03-4473-9468-D6707BD6CA20}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABD4BC-FD03-4473-9468-D6707BD6CA20}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD2E28-11F1-4DFC-9A4B-8C5DCCE49AD4}","Description",0,"%SystemRoot%\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD2E28-11F1-4DFC-9A4B-8C5DCCE49AD4}","ItemData",0,"%16420%\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD2E28-11F1-4DFC-9A4B-8C5DCCE49AD4}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD2E28-11F1-4DFC-9A4B-8C5DCCE49AD4}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD2E44-65DA-4361-817E-90D80F1CF631}","Description",0,"%SystemRoot%\Tasks:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD2E44-65DA-4361-817E-90D80F1CF631}","ItemData",0,"%16420%\Tasks:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD2E44-65DA-4361-817E-90D80F1CF631}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD2E44-65DA-4361-817E-90D80F1CF631}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\Temp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADC554-00AF-4BDE-A192-FF2914E2653F}","Description",0,"%SystemRoot%\Temp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADC554-00AF-4BDE-A192-FF2914E2653F}","ItemData",0,"%16420%\Temp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADC554-00AF-4BDE-A192-FF2914E2653F}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADC554-00AF-4BDE-A192-FF2914E2653F}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\Temp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADD2B8-A529-491E-BB39-4F7694557B88}","Description",0,"%SystemRoot%\Temp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADD2B8-A529-491E-BB39-4F7694557B88}","ItemData",0,"%16420%\Temp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADD2B8-A529-491E-BB39-4F7694557B88}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADD2B8-A529-491E-BB39-4F7694557B88}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\Temporary Internet Files"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE1B00-211E-4076-A064-C0BD8EAFA742}","Description",0,"%SystemRoot%\Temporary Internet Files"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE1B00-211E-4076-A064-C0BD8EAFA742}","ItemData",0,"%16420%\Temporary Internet Files"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE1B00-211E-4076-A064-C0BD8EAFA742}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE1B00-211E-4076-A064-C0BD8EAFA742}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\Tracing"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE8F25-7D29-4ABE-A5F3-4E7F99FA5B74}","Description",0,"%SystemRoot%\Tracing"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE8F25-7D29-4ABE-A5F3-4E7F99FA5B74}","ItemData",0,"%16420%\Tracing"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE8F25-7D29-4ABE-A5F3-4E7F99FA5B74}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE8F25-7D29-4ABE-A5F3-4E7F99FA5B74}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\Tracing"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE9BE3-3292-47C3-AC36-65E40B2818DA}","Description",0,"%SystemRoot%\Tracing:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE9BE3-3292-47C3-AC36-65E40B2818DA}","ItemData",0,"%16420%\Tracing:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE9BE3-3292-47C3-AC36-65E40B2818DA}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE9BE3-3292-47C3-AC36-65E40B2818DA}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\Web"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AF2ED3-7F52-49AA-9970-712A1D8FB8F5}","Description",0,"%SystemRoot%\Web"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AF2ED3-7F52-49AA-9970-712A1D8FB8F5}","ItemData",0,"%16420%\Web"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AF2ED3-7F52-49AA-9970-712A1D8FB8F5}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AF2ED3-7F52-49AA-9970-712A1D8FB8F5}","SaferFlags",65537,0
+
+; Deny execution in 'My Computer' zone
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE30-2030-45AA-B54D-6C407941D825}","ItemData",65537,0
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE30-2030-45AA-B54D-6C407941D825}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE30-2030-45AA-B54D-6C407941D825}","SaferFlags",65537,0
+
+; Deny execution in 'Intranet' zone
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE31-2030-45AA-B54D-6C407941D825}","ItemData",65537,1
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE31-2030-45AA-B54D-6C407941D825}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE31-2030-45AA-B54D-6C407941D825}","SaferFlags",65537,0
+
+; Deny execution in 'Trusted Sites' zone
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE32-2030-45AA-B54D-6C407941D825}","ItemData",65537,2
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE32-2030-45AA-B54D-6C407941D825}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE32-2030-45AA-B54D-6C407941D825}","SaferFlags",65537,0
+
+; Deny execution in 'Internet' zone
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE33-2030-45AA-B54D-6C407941D825}","ItemData",65537,3
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE33-2030-45AA-B54D-6C407941D825}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE33-2030-45AA-B54D-6C407941D825}","SaferFlags",65537,0
+
+; Deny execution in 'Restricted Sites' zone
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE34-2030-45AA-B54D-6C407941D825}","ItemData",65537,4
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE34-2030-45AA-B54D-6C407941D825}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE34-2030-45AA-B54D-6C407941D825}","SaferFlags",65537,0
+
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\4096\Hashes",,16
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\4096\Paths",,16
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\4096\URLZones",,16
+
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\65536\Hashes",,16
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\65536\Paths",,16
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\65536\URLZones",,16
+
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\131072\Hashes",,16
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\131072\Paths",,16
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\131072\URLZones",,16
+
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Hashes",,16
+
+; Allow execution in "%SystemRoot%" (modified original rule)
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{191CD7FA-F240-4A17-8986-94D480A6C8CA}","Description",0,"%SystemRoot%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{191CD7FA-F240-4A17-8986-94D480A6C8CA}","ItemData",0,"%16420%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{191CD7FA-F240-4A17-8986-94D480A6C8CA}","LastModified",720897,f0,8f,aa,44,f3,f8,c6,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{191CD7FA-F240-4A17-8986-94D480A6C8CA}","SaferFlags",65537,0
+
+; Allow execution in "%ProgramFiles%" (modified original rule)
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2C34AB2-529A-46B2-B293-FC853FCE72EA}","Description",0,"%ProgramFiles%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2C34AB2-529A-46B2-B293-FC853FCE72EA}","ItemData",0,"%16422%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2C34AB2-529A-46B2-B293-FC853FCE72EA}","LastModified",720897,f0,8f,aa,44,f3,f8,c6,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2C34AB2-529A-46B2-B293-FC853FCE72EA}","SaferFlags",65537,0
+
+; Allow execution in "%CommonProgramFiles%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2C37D40-EA2D-11DC-8F61-0004760DFF53}","Description",0,"%CommonProgramFiles%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2C37D40-EA2D-11DC-8F61-0004760DFF53}","ItemData",0,"%16427%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2C37D40-EA2D-11DC-8F61-0004760DFF53}","LastModified",720897,f0,8f,aa,44,f3,f8,c6,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2C37D40-EA2D-11DC-8F61-0004760DFF53}","SaferFlags",65537,0
+
+; Allow execution in "%ProgramData%\Microsoft\Windows Defender\Platform" (KB4052623)
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2CA0FDC-56AF-465F-9C2A-AE5B25D4AA90}","Description",0,"%ProgramData%\Microsoft\Windows Defender\Platform (KB4052623)"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2CA0FDC-56AF-465F-9C2A-AE5B25D4AA90}","ItemData",0,"%16419%\Microsoft\Windows Defender\Platform"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2CA0FDC-56AF-465F-9C2A-AE5B25D4AA90}","LastModified",720897,e0,53,86,62,06,be,d6,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2CA0FDC-56AF-465F-9C2A-AE5B25D4AA90}","SaferFlags",65537,0
+
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\URLZones",,16
+
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\LevelObjects",,16
+
+; Overwrite bogus and invalid 'AppLocker' rule count which disables 'SAFER'
+HKLM,"SYSTEM\CurrentControlSet\Control\Srp\GP","RuleCount",65569,0
+
+; Allow execution of "%SystemRoot%\ServiceProfiles\NetworkService\AppData\Local\Temp\????????-????-4???-????-????????????\MPSigStub.Exe" for "NT AUTHORITY\NETWORK SERVICE"
+HKU,"S-1-5-20\SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{9B926B8F-1604-4E15-90CA-C99D0D703DE7}","Description",0,"Windows Defender Signature Update"
+HKU,"S-1-5-20\SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{9B926B8F-1604-4E15-90CA-C99D0D703DE7}","ItemData",0,"%16420%\ServiceProfiles\NetworkService\AppData\Local\Temp\????????-????-4???-????-????????????\MPSigStub.Exe"
+HKU,"S-1-5-20\SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{9B926B8F-1604-4E15-90CA-C99D0D703DE7}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKU,"S-1-5-20\SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{9B926B8F-1604-4E15-90CA-C99D0D703DE7}","SaferFlags",65537,0
+
+[Install.AddReg.x86]
+; Append 'SAFER' settings and rules to 'REGISTRY.POL'
+; CAUTION: unless all 'SAFER' settings and rules are removed from 'REGISTRY.POL', 'SRP2LGPO.EXE' may only be run once!
+;HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce\Setup","Softwarebeschränkungsrichtlinien",0,"""%01%\I386\SRP2LGPO.EXE"" /Machine"
+
+; (KB927387)
+HKLM,"SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup","Software Restriction Policies",65536,"%SystemRoot%\System32\LogFiles\Safer.Log","%LOCALAPPDATA%\VirtualStore\Windows\System32\LogFiles\Safer.Log"
+
+[Install.AddReg.ia64]
+; Append 'SAFER' settings and rules to 'REGISTRY.POL'
+; CAUTION: unless all 'SAFER' settings and rules are removed from 'REGISTRY.POL', 'SRP2LGPO.EXE' may only be run once!
+;HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce\Setup","Softwarebeschränkungsrichtlinien",0,"""%01%\IA64\SRP2LGPO.EXE"" /Machine"
+
+; (KB927387)
+HKLM,"SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup","Software Restriction Policies",65536,"%SystemRoot%\System32\LogFiles\Safer.Log","%LOCALAPPDATA%\VirtualStore\Windows\System32\LogFiles\Safer.Log"
+
+[Install.AddReg.amd64]
+; Append 'SAFER' settings and rules to 'REGISTRY.POL'
+; CAUTION: unless all 'SAFER' settings and rules are removed from 'REGISTRY.POL', 'SRP2LGPO.EXE' may only be run once!
+;HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce\Setup","Softwarebeschränkungsrichtlinien",0,"""%01%\AMD64\SRP2LGPO.EXE"" /Machine"
+
+; Deny execution of "%SystemRoot%\SysNative\RunAs.Exe":
+;  "%SystemRoot%\SysNative\RunAs.Exe" /TrustLevel:Unrestricted "<program.exe>" circumvents 'SAFER' restrictions!
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{10011479-708B-41F7-A992-CF1FD376BBB7}","Description",0,"%SystemRoot%\SysNative\RunAs.Exe"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{10011479-708B-41F7-A992-CF1FD376BBB7}","ItemData",0,"%16420%\SysNative\RunAs.Exe"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{10011479-708B-41F7-A992-CF1FD376BBB7}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{10011479-708B-41F7-A992-CF1FD376BBB7}","SaferFlags",65537,0
+
+; Deny execution of "%SystemRoot%\SysWoW64\RunAs.Exe":
+;  "%SystemRoot%\SysWoW64\RunAs.Exe" /TrustLevel:Unrestricted "<program.exe>" circumvents 'SAFER' restrictions!
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{1001DEEE-128A-4A4D-A684-2C7035340E4B}","Description",0,"%SystemRoot%\SysWoW64\RunAs.Exe"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{1001DEEE-128A-4A4D-A684-2C7035340E4B}","ItemData",0,"%16420%\SysWoW64\RunAs.Exe"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{1001DEEE-128A-4A4D-A684-2C7035340E4B}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{1001DEEE-128A-4A4D-A684-2C7035340E4B}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysNative\CatRoot2\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC0754-8034-4F7B-B12B-C68A5002E657}","Description",0,"%SystemRoot%\SysNative\CatRoot2\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC0754-8034-4F7B-B12B-C68A5002E657}","ItemData",0,"%16420%\SysNative\CatRoot2\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC0754-8034-4F7B-B12B-C68A5002E657}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC0754-8034-4F7B-B12B-C68A5002E657}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\SysNative\CatRoot2\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC11AA-68C6-4994-B232-4B1930D3E799}","Description",0,"%SystemRoot%\SysNative\CatRoot2\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC11AA-68C6-4994-B232-4B1930D3E799}","ItemData",0,"%16420%\SysNative\CatRoot2\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC11AA-68C6-4994-B232-4B1930D3E799}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC11AA-68C6-4994-B232-4B1930D3E799}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysNative\COM\Dmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC1CC0-9FF7-4D8D-876C-948707693763}","Description",0,"%SystemRoot%\SysNative\COM\Dmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC1CC0-9FF7-4D8D-876C-948707693763}","ItemData",0,"%16420%\SysNative\COM\Dmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC1CC0-9FF7-4D8D-876C-948707693763}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC1CC0-9FF7-4D8D-876C-948707693763}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\SysNative\COM\Dmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC2154-25AA-4993-9290-6609A76C03F1}","Description",0,"%SystemRoot%\SysNative\COM\Dmp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC2154-25AA-4993-9290-6609A76C03F1}","ItemData",0,"%16420%\SysNative\COM\Dmp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC2154-25AA-4993-9290-6609A76C03F1}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC2154-25AA-4993-9290-6609A76C03F1}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysNative\Config"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC48BA-7F96-4EEC-9946-7E7417BBDC67}","Description",0,"%SystemRoot%\SysNative\Config"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC48BA-7F96-4EEC-9946-7E7417BBDC67}","ItemData",0,"%16420%\SysNative\Config"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC48BA-7F96-4EEC-9946-7E7417BBDC67}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC48BA-7F96-4EEC-9946-7E7417BBDC67}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysNative\FxsTmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACA63F-AC8E-4EFF-9F6A-15BBE60F1402}","Description",0,"%SystemRoot%\SysNative\FxsTmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACA63F-AC8E-4EFF-9F6A-15BBE60F1402}","ItemData",0,"%16420%\SysNative\FxsTmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACA63F-AC8E-4EFF-9F6A-15BBE60F1402}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACA63F-AC8E-4EFF-9F6A-15BBE60F1402}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\SysNative\FxsTmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACA930-BC79-4A8F-B118-C540259C08EC}","Description",0,"%SystemRoot%\SysNative\FxsTmp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACA930-BC79-4A8F-B118-C540259C08EC}","ItemData",0,"%16420%\SysNative\FxsTmp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACA930-BC79-4A8F-B118-C540259C08EC}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACA930-BC79-4A8F-B118-C540259C08EC}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysNative\LogFiles\WMI"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACAC25-9EAB-44E5-DE51-6FA35DBCB0D3}","Description",0,"%SystemRoot%\SysNative\LogFiles\WMI"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACAC25-9EAB-44E5-DE51-6FA35DBCB0D3}","ItemData",0,"%16420%\SysNative\LogFiles\WMI"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACAC25-9EAB-44E5-DE51-6FA35DBCB0D3}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACAC25-9EAB-44E5-DE51-6FA35DBCB0D3}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysNative\Microsoft\Crypto\RSA\MachineKeys"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACAFD8-4F1E-4647-AFB4-ADBD728FBD40}","Description",0,"%SystemRoot%\SysNative\Microsoft\Crypto\RSA\MachineKeys"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACAFD8-4F1E-4647-AFB4-ADBD728FBD40}","ItemData",0,"%16420%\SysNative\Microsoft\Crypto\RSA\MachineKeys"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACAFD8-4F1E-4647-AFB4-ADBD728FBD40}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACAFD8-4F1E-4647-AFB4-ADBD728FBD40}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\SysNative\Microsoft\Crypto\RSA\MachineKeys"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB0A2-8718-4D8E-BA26-1C31795EAF9B}","Description",0,"%SystemRoot%\SysNative\Microsoft\Crypto\RSA\MachineKeys:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB0A2-8718-4D8E-BA26-1C31795EAF9B}","ItemData",0,"%16420%\SysNative\Microsoft\Crypto\RSA\MachineKeys:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB0A2-8718-4D8E-BA26-1C31795EAF9B}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB0A2-8718-4D8E-BA26-1C31795EAF9B}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysNative\Spool\Drivers\Color"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB4E9-42DB-48D9-B0ED-FD7352942E0D}","Description",0,"%SystemRoot%\SysNative\Spool\Drivers\Color"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB4E9-42DB-48D9-B0ED-FD7352942E0D}","ItemData",0,"%16420%\SysNative\Spool\Drivers\Color"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB4E9-42DB-48D9-B0ED-FD7352942E0D}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB4E9-42DB-48D9-B0ED-FD7352942E0D}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\SysNative\Spool\Drivers\Color"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB7C1-0CF7-4F05-806F-2A30D4C8ABFD}","Description",0,"%SystemRoot%\SysNative\Spool\Drivers\Color:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB7C1-0CF7-4F05-806F-2A30D4C8ABFD}","ItemData",0,"%16420%\SysNative\Spool\Drivers\Color:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB7C1-0CF7-4F05-806F-2A30D4C8ABFD}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB7C1-0CF7-4F05-806F-2A30D4C8ABFD}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysNative\Spool\Printers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACBB4C-267E-4158-99E3-096F6BC91C94}","Description",0,"%SystemRoot%\SysNative\Spool\Printers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACBB4C-267E-4158-99E3-096F6BC91C94}","ItemData",0,"%16420%\SysNative\Spool\Printers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACBB4C-267E-4158-99E3-096F6BC91C94}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACBB4C-267E-4158-99E3-096F6BC91C94}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\SysNative\Spool\Printers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACBEE8-F68F-4D58-8F36-CA5DC15D0969}","Description",0,"%SystemRoot%\SysNative\Spool\Printers:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACBEE8-F68F-4D58-8F36-CA5DC15D0969}","ItemData",0,"%16420%\SysNative\Spool\Printers:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACBEE8-F68F-4D58-8F36-CA5DC15D0969}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACBEE8-F68F-4D58-8F36-CA5DC15D0969}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysNative\Spool\Servers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACCCFF-CF45-4D7C-B94B-5FB48C5A1F0D}","Description",0,"%SystemRoot%\SysNative\Spool\Servers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACCCFF-CF45-4D7C-B94B-5FB48C5A1F0D}","ItemData",0,"%16420%\SysNative\Spool\Servers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACCCFF-CF45-4D7C-B94B-5FB48C5A1F0D}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACCCFF-CF45-4D7C-B94B-5FB48C5A1F0D}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\SysNative\Spool\Servers"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACD77E-C11D-4277-AF6B-600B5C6ADEB7}","Description",0,"%SystemRoot%\SysNative\Spool\Servers:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACD77E-C11D-4277-AF6B-600B5C6ADEB7}","ItemData",0,"%16420%\SysNative\Spool\Servers:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACD77E-C11D-4277-AF6B-600B5C6ADEB7}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACD77E-C11D-4277-AF6B-600B5C6ADEB7}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysNative\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACE1FA-9898-48CF-AD02-79364398B3AC}","Description",0,"%SystemRoot%\SysNative\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACE1FA-9898-48CF-AD02-79364398B3AC}","ItemData",0,"%16420%\SysNative\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACE1FA-9898-48CF-AD02-79364398B3AC}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACE1FA-9898-48CF-AD02-79364398B3AC}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\SysNative\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACE652-E740-4011-B274-F0B6D16E8240}","Description",0,"%SystemRoot%\SysNative\Tasks:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACE652-E740-4011-B274-F0B6D16E8240}","ItemData",0,"%16420%\SysNative\Tasks:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACE652-E740-4011-B274-F0B6D16E8240}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACE652-E740-4011-B274-F0B6D16E8240}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysNative\Tasks_Migrated"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACEAA8-1CEE-4D0B-B025-6F6627586F40}","Description",0,"%SystemRoot%\SysNative\Tasks_Migrated"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACEAA8-1CEE-4D0B-B025-6F6627586F40}","ItemData",0,"%16420%\SysNative\Tasks_Migrated"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACEAA8-1CEE-4D0B-B025-6F6627586F40}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACEAA8-1CEE-4D0B-B025-6F6627586F40}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\SysNative\Tasks_Migrated"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACEECC-73A2-458A-8760-45EEFC65BFCF}","Description",0,"%SystemRoot%\SysNative\Tasks_Migrated:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACEECC-73A2-458A-8760-45EEFC65BFCF}","ItemData",0,"%16420%\SysNative\Tasks_Migrated:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACEECC-73A2-458A-8760-45EEFC65BFCF}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACEECC-73A2-458A-8760-45EEFC65BFCF}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysWoW64\COM\Dmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACF3C4-F983-4B2F-9715-E2A254DBD4C5}","Description",0,"%SystemRoot%\SysWoW64\COM\Dmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACF3C4-F983-4B2F-9715-E2A254DBD4C5}","ItemData",0,"%16420%\SysWoW64\COM\Dmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACF3C4-F983-4B2F-9715-E2A254DBD4C5}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACF3C4-F983-4B2F-9715-E2A254DBD4C5}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\SysWoW64\COM\Dmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD3132-2585-42E3-84A9-EB500E0CD407}","Description",0,"%SystemRoot%\SysWoW64\COM\Dmp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD3132-2585-42E3-84A9-EB500E0CD407}","ItemData",0,"%16420%\SysWoW64\COM\Dmp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD3132-2585-42E3-84A9-EB500E0CD407}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD3132-2585-42E3-84A9-EB500E0CD407}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysWoW64\Config"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD33EF-639B-44A5-A636-7EA11EBDC769}","Description",0,"%SystemRoot%\SysWoW64\Config"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD33EF-639B-44A5-A636-7EA11EBDC769}","ItemData",0,"%16420%\SysWoW64\Config"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD33EF-639B-44A5-A636-7EA11EBDC769}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD33EF-639B-44A5-A636-7EA11EBDC769}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysWoW64\FxsTmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD3418-5BF7-4C2B-AEAF-711D6F9914E0}","Description",0,"%SystemRoot%\SysWoW64\FxsTmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD3418-5BF7-4C2B-AEAF-711D6F9914E0}","ItemData",0,"%16420%\SysWoW64\FxsTmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD3418-5BF7-4C2B-AEAF-711D6F9914E0}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD3418-5BF7-4C2B-AEAF-711D6F9914E0}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\SysWoW64\FxsTmp"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADA7B0-96EE-46A2-8BE4-ED0A088DAE7C}","Description",0,"%SystemRoot%\SysWoW64\FxsTmp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADA7B0-96EE-46A2-8BE4-ED0A088DAE7C}","ItemData",0,"%16420%\SysWoW64\FxsTmp:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADA7B0-96EE-46A2-8BE4-ED0A088DAE7C}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADA7B0-96EE-46A2-8BE4-ED0A088DAE7C}","SaferFlags",65537,0
+
+; Deny execution in "%SystemRoot%\SysWoW64\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADAAE2-ECB6-4F67-9866-EBF3C16FC497}","Description",0,"%SystemRoot%\SysWoW64\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADAAE2-ECB6-4F67-9866-EBF3C16FC497}","ItemData",0,"%16420%\SysWoW64\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADAAE2-ECB6-4F67-9866-EBF3C16FC497}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADAAE2-ECB6-4F67-9866-EBF3C16FC497}","SaferFlags",65537,0
+
+; Deny execution from 'alternate data streams' of "%SystemRoot%\SysWoW64\Tasks"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADD848-DED7-472F-8D27-0C4080D18F17}","Description",0,"%SystemRoot%\SysWoW64\Tasks:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADD848-DED7-472F-8D27-0C4080D18F17}","ItemData",0,"%16420%\SysWoW64\Tasks:*"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADD848-DED7-472F-8D27-0C4080D18F17}","LastModified",720897,c0,14,54,6e,8d,f9,c5,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADD848-DED7-472F-8D27-0C4080D18F17}","SaferFlags",65537,0
+
+; Allow execution in "%ProgramFiles(x86)%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{C77CC673-3BA3-427D-C9DE-76D54F6DC97E}","Description",0,"%ProgramFiles(x86)%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{C77CC673-3BA3-427D-C9DE-76D54F6DC97E}","ItemData",0,"%16426%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{C77CC673-3BA3-427D-C9DE-76D54F6DC97E}","LastModified",720897,f0,8f,aa,44,f3,f8,c6,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{C77CC673-3BA3-427D-C9DE-76D54F6DC97E}","SaferFlags",65537,0
+
+; Allow execution in "%CommonProgramFiles(x86)%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{C77F1D47-1FE1-4E7A-869C-57659099E912}","Description",0,"%CommonProgramFiles(x86)%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{C77F1D47-1FE1-4E7A-869C-57659099E912}","ItemData",0,"%16428%"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{C77F1D47-1FE1-4E7A-869C-57659099E912}","LastModified",720897,f0,8f,aa,44,f3,f8,c6,01
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{C77F1D47-1FE1-4E7A-869C-57659099E912}","SaferFlags",65537,0
+
+; (KB927387)
+HKLM,"SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup","Software Restriction Policies",65536,"%SystemRoot%\System32\LogFiles\Safer.Log","%SystemRoot%\SysWoW64\LogFiles\Safer.Log","%SystemRoot%\SysNative\LogFiles\Safer.Log","%LOCALAPPDATA%\VirtualStore\Windows\System32\LogFiles\Safer.Log"
+
+[Remove.DelReg]
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\eSKamation.Safer"
+
+HKLM,"SOFTWARE\Policies\Microsoft\SystemCertificates\TrustedPublisher\Safer","AuthentiCodeFlags",65537,0x00000300
+
+; Disable advanced 'SAFER' logging
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","LogFileName",0,"%16421%\LogFiles\SAFER.LOG"
+
+; Remove all 'Disallowed' path rules
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths"
+
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B92F9B-EE8C-41D5-9AA1-B33D35DB49FB}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B97DA0-641E-474E-BDCC-3F2294507AC3}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9A46A-64A1-4BE5-A896-6E0B4B1C502C}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9D2EC-FB61-4161-1341-3DBEF03AF18E}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{00B9DFE4-ED08-4328-B355-4BC63D6267B2}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{06FFDEFE-4EC8-4CCB-BA70-86C7054B2AC6}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{1001AAF1-749F-49F4-8010-297BD6CA33A0}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{2742F840-C2D8-4EB3-A486-0A9D0879F29F}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A69B6C-8792-426D-89AB-CE11B1DB3017}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A80AF5-D291-4464-8D15-A877F332A666}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A84AEC-7487-494A-891A-09EB13942A77}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A879D0-94C6-4145-9039-19A1DD94E2F5}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A8C62E-75B6-4447-B54F-B351757BF34E}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A8F941-D7CB-4042-8C04-AAA87ADB8FC2}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A90615-4ABE-4937-879C-47C19F107CC8}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A918B9-7529-44E7-9C6D-5098F8B1D90F}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A919D4-AF0E-44F1-A205-414D8F39E12B}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A920B3-02C4-4F7A-BA23-D282A57394D6}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A92CBF-44F7-4E1E-A29D-FA166125C8B8}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A945C6-411A-4C85-9C98-1A196616BCC9}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A958A9-54CF-4336-8123-D7FB74D5CD06}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7A98E1D-1577-134F-9B9C-75278D6318EB}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AA3C3E-3E5D-48D1-9E46-E3DDDBFE0B5B}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AA4CFF-DAF2-4649-8D74-8CFF1F50FDF8}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AA71AB-90A6-4621-82B1-FF348DAD6D85}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAB6D7-0010-4BA1-9AD1-A440202167D3}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAC585-C34F-4BFD-8941-AAF1B1AD77E5}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAE749-8B75-4BE5-84C3-C728EC2A57DF}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AAFAC1-17A0-4834-A55C-7B9FCEBEB4FB}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB3254-7E0F-4213-8F86-749F5EDAEDA4}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB32D0-7400-45F8-9646-7C954FC2B8FB}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB3EA3-E425-40B2-B4F5-8163DE60B306}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB4C34-83EF-4AAD-A1B9-12F7AA18487B}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AB5787-EB67-4727-8DE8-CEC6106EA3F6}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABA2A7-2D33-42A9-AC8B-A5FEDE1DF6FA}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABAF83-F923-4DD8-ADF2-98D4D48842BE}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABB2D1-A6AF-4D87-AE2C-838C6524EDA4}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABC579-730B-463E-A23D-30778998D7A3}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ABD4BC-FD03-4473-9468-D6707BD6CA20}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD2E28-11F1-4DFC-9A4B-8C5DCCE49AD4}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD2E44-65DA-4361-817E-90D80F1CF631}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADC554-00AF-4BDE-A192-FF2914E2653F}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADD2B8-A529-491E-BB39-4F7694557B88}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE1B00-211E-4076-A064-C0BD8EAFA742}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE8F25-7D29-4ABE-A5F3-4E7F99FA5B74}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AE9BE3-3292-47C3-AC36-65E40B2818DA}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AF2ED3-7F52-49AA-9970-712A1D8FB8F5}"
+
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE30-2030-45AA-B54D-6C407941D825}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE31-2030-45AA-B54D-6C407941D825}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE32-2030-45AA-B54D-6C407941D825}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE33-2030-45AA-B54D-6C407941D825}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\URLZones\{643ADE34-2030-45AA-B54D-6C407941D825}"
+
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2C37D40-EA2D-11DC-8F61-0004760DFF53}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{D2CA0FDC-56AF-465F-9C2A-AE5B25D4AA90}"
+
+;HKLM,"SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup","Software Restriction Policies"
+
+HKU,"S-1-5-20\SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{9B926B8F-1604-4E15-90CA-C99D0D703DE7}"
+
+[Remove.DelReg.amd64]
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{10011479-708B-41F7-A992-CF1FD376BBB7}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{1001DEEE-128A-4A4D-A684-2C7035340E4B}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC0754-8034-4F7B-B12B-C68A5002E657}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC11AA-68C6-4994-B232-4B1930D3E799}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC1CC0-9FF7-4D8D-876C-948707693763}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC2154-25AA-4993-9290-6609A76C03F1}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AC48BA-7F96-4EEC-9946-7E7417BBDC67}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACA63F-AC8E-4EFF-9F6A-15BBE60F1402}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACA930-BC79-4A8F-B118-C540259C08EC}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACAC25-9EAB-44E5-DE51-6FA35DBCB0D3}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACAFD8-4F1E-4647-AFB4-ADBD728FBD40}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB0A2-8718-4D8E-BA26-1C31795EAF9B}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB4E9-42DB-48D9-B0ED-FD7352942E0D}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACB7C1-0CF7-4F05-806F-2A30D4C8ABFD}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACBB4C-267E-4158-99E3-096F6BC91C94}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACBEE8-F68F-4D58-8F36-CA5DC15D0969}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACCCFF-CF45-4D7C-B94B-5FB48C5A1F0D}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACD77E-C11D-4277-AF6B-600B5C6ADEB7}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACE1FA-9898-48CF-AD02-79364398B3AC}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACE652-E740-4011-B274-F0B6D16E8240}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACEAA8-1CEE-4D0B-B025-6F6627586F40}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACEECC-73A2-458A-8760-45EEFC65BFCF}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ACF3C4-F983-4B2F-9715-E2A254DBD4C5}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD3132-2585-42E3-84A9-EB500E0CD407}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD33EF-639B-44A5-A636-7EA11EBDC769}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7AD3418-5BF7-4C2B-AEAF-711D6F9914E0}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADA7B0-96EE-46A2-8BE4-ED0A088DAE7C}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADAAE2-ECB6-4F67-9866-EBF3C16FC497}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{C7ADD848-DED7-472F-8D27-0C4080D18F17}"
+
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{C77CC673-3BA3-427D-C9DE-76D54F6DC97E}"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{C77ECE93-AA72-4E53-AB00-28F5544813A1}"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{C77F1D47-1FE1-4E7A-869C-57659099E912}"
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\262144\Paths\{C77F51FE-2F84-4CA1-81BC-2C815CD746BD}"
+
+[Remove.AddReg]
+; Reset default 'SAFER' policy to 'Unrestricted'
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","DefaultLevel",65537,0x00040000
+
+; Add file name extensions '.INF', '.LNK', '.REG' and '.URL' to 'SAFER' executables list
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"INF"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"LNK"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"REG"
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","ExecutableTypes",65544,"URL"
+
+; Don't exempt 'Administrators' from 'SAFER'
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","PolicyScope",65537,0
+
+; Disable 'SAFER' for all executables
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers","TransparentEnabled",65537,0
+
+[Remove.Shortcut]
+Name       = "SAFER Loophole Check",2
+SubDir     = ".."
+
+[Strings]
